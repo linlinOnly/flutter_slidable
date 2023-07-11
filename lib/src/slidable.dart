@@ -17,7 +17,7 @@ class Slidable extends StatefulWidget {
   ///
   /// The [enabled], [closeOnScroll], [direction], [dragStartBehavior],
   /// [useTextDirection] and [child] arguments must not be null.
-  const Slidable({
+  Slidable({
     Key? key,
     this.groupTag,
     this.enabled = true,
@@ -27,6 +27,7 @@ class Slidable extends StatefulWidget {
     this.direction = Axis.horizontal,
     this.dragStartBehavior = DragStartBehavior.down,
     this.useTextDirection = true,
+    this.updateMoveBack,
     required this.child,
   }) : super(key: key);
 
@@ -101,6 +102,8 @@ class Slidable extends StatefulWidget {
   /// {@macro flutter.widgets.ProxyWidget.child}
   final Widget child;
 
+  void Function(double moveWith)? updateMoveBack;
+
   @override
   _SlidableState createState() => _SlidableState();
 
@@ -143,7 +146,7 @@ class _SlidableState extends State<Slidable>
     super.didChangeDependencies();
     updateIsLeftToRight();
     updateController();
-    updateMoveAnimation();
+    updateMoveAnimation(needBack: false);
   }
 
   @override
@@ -179,7 +182,7 @@ class _SlidableState extends State<Slidable>
 
   void handleActionPanelTypeChanged() {
     setState(() {
-      updateMoveAnimation();
+      updateMoveAnimation(needBack: true);
     });
   }
 
@@ -189,7 +192,7 @@ class _SlidableState extends State<Slidable>
     }
   }
 
-  void updateMoveAnimation() {
+  void updateMoveAnimation({required bool needBack}) {
     final double end = controller.direction.value.toDouble();
     moveAnimation = controller.animation.drive(
       Tween<Offset>(
@@ -199,6 +202,9 @@ class _SlidableState extends State<Slidable>
             : Offset(0, end),
       ),
     );
+    if (widget.updateMoveBack != null && needBack == true) {
+      widget.updateMoveBack?.call(end);
+    }
   }
 
   Widget? get actionPane {
@@ -217,6 +223,7 @@ class _SlidableState extends State<Slidable>
 
   Alignment get actionPaneAlignment {
     final sign = controller.direction.value.toDouble();
+
     if (widget.direction == Axis.horizontal) {
       return Alignment(-sign, 0);
     } else {
